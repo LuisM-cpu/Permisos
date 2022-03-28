@@ -36,18 +36,18 @@ public class Contactos extends AppCompatActivity {
     }
 
     ActivityResultLauncher<String> solicitarPermisoContactos = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            new ActivityResultCallback<Boolean>() {
-                @Override
-                public void onActivityResult(Boolean result) {
-                    if(result == true){
-                        mCursor=getContentResolver().query(
-                                ContactsContract.Contacts.CONTENT_URI,
-                                mProjection, null, null, null);
-                        mContactsAdapter.changeCursor(mCursor);
-                    }else{
-                        Toast.makeText(Contactos.this, "No se otorgó el permiso.", Toast.LENGTH_SHORT).show();
-                    }
+        new ActivityResultContracts.RequestPermission(),
+        new ActivityResultCallback<Boolean>() {
+            @Override
+            public void onActivityResult(Boolean result) {
+                if(result == true){
+                    mCursor=getContentResolver().query(
+                            ContactsContract.Contacts.CONTENT_URI,
+                            mProjection, null, null, null);
+                    mContactsAdapter.changeCursor(mCursor);
+                }else{
+                    Toast.makeText(Contactos.this, "No se otorgó el permiso.", Toast.LENGTH_SHORT).show();
                 }
-            });
+            }
+        });
 }
