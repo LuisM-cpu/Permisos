@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.permisos">
 
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />

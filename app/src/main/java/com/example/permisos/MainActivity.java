@@ -6,64 +6,56 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import java.io.File;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button seleccionar, camara;
-    ImageView imagen;
-    Uri uricamara;
+    ImageButton botonCamara, botonContactos, botonMapa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        seleccionar = findViewById(R.id.seleccionar);
-        camara = findViewById(R.id.camara);
-        imagen = findViewById(R.id.imagen);
-        File archivo = new File(getFilesDir(),"fotodesdeCamara");
-        uricamara = FileProvider.getUriForFile(this,getApplicationContext().getPackageName()+".fileprovider",archivo);
 
-        ActivityResultLauncher<String> obtenerImagen = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                new ActivityResultCallback<Uri>() {
-                    @Override
-                    public void onActivityResult(Uri result) {
-                        //Carga una imagen en la vista...
-                        imagen.setImageURI(result);
-                    }
-                }
-        );
+        botonCamara = findViewById(R.id.botonCamara);
+        botonContactos = findViewById(R.id.botonContactos);
+        botonMapa = findViewById(R.id.botonMapa);
 
-        ActivityResultLauncher<Uri> tomarFoto = registerForActivityResult(
-                new ActivityResultContracts.TakePicture(),
-                new ActivityResultCallback<Boolean>() {
-                    @Override
-                    public void onActivityResult(Boolean result) {
-                        imagen.setImageURI(uricamara);
-                    }
-                }
-        );
-
-        seleccionar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                obtenerImagen.launch("image/*");
-            }
-        });
-
-        camara.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tomarFoto.launch(uricamara);
-            }
-        });
+        botonCamara.setOnClickListener(abrirCamara);
+        botonContactos.setOnClickListener(verContactos);
+        botonMapa.setOnClickListener(abrirMapa);
     }
 
+    private View.OnClickListener abrirCamara = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(view.getContext(),Camara.class);
+            startActivity(intent);
+        }
+    };
+
+    private View.OnClickListener verContactos = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(view.getContext(),Contactos.class);
+            startActivity(intent);
+        }
+    };
+
+    private View.OnClickListener abrirMapa = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent(view.getContext(), Mapa.class);
+            startActivity(intent);
+        }
+    };
 }
