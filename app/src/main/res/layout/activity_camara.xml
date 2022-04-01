@@ -23,6 +23,7 @@
         android:layout_marginTop="62dp"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imagen"
         app:layout_constraintVertical_bias="0.01">
@@ -32,8 +33,8 @@
             android:layout_width="wrap_content"
             android:layout_height="50dp"
             android:layout_gravity="center"
-            android:layout_weight="0.3"
             android:layout_margin="10dp"
+            android:layout_weight="0.3"
             android:backgroundTint="@color/blue"
             android:text="SELECCIONAR IMAGEN" />
 
@@ -42,8 +43,8 @@
             android:layout_width="wrap_content"
             android:layout_height="50dp"
             android:layout_gravity="center"
-            android:layout_weight="0.7"
             android:layout_margin="10dp"
+            android:layout_weight="0.7"
             android:backgroundTint="@color/blue"
             android:text="CAMARA" />
     </LinearLayout>
