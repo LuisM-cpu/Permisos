@@ -1,2 +1,2 @@
 # Permisos
- Taller realizado en la clase de Intro. a la Comp. Móvil. Se basa en la solicitud de permisos de cámara y galería mediante el Activity API.
+ App realizada en la clase de Computación Móvil. Se basa en la solicitud de permisos de cámara, contactos y GPS.
