@@ -36,7 +36,7 @@ public class Contactos extends AppCompatActivity {
         };
         mContactsAdapter = new ContactsAdapter(this, null, 0);
         listaContactos.setAdapter(mContactsAdapter);
-        snackbar = Snackbar.make(findViewById(R.id.layoutcontactos),"No se ha otorgado el permiso",Snackbar.LENGTH_SHORT);
+        snackbar = Snackbar.make(findViewById(R.id.layoutcontactos),"Se necesita el permiso para poder leer y mostrar sus contactos",Snackbar.LENGTH_SHORT);
         snackbar.setAction("Otorgar permiso",Otorgar);
         if(shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS))
         {
