@@ -11,8 +11,11 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.google.android.material.snackbar.Snackbar;
 
 public class Contactos extends AppCompatActivity {
 
@@ -20,6 +23,7 @@ public class Contactos extends AppCompatActivity {
     Cursor mCursor;
     ContactsAdapter mContactsAdapter;
     ListView listaContactos;
+    Snackbar snackbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +36,14 @@ public class Contactos extends AppCompatActivity {
         };
         mContactsAdapter = new ContactsAdapter(this, null, 0);
         listaContactos.setAdapter(mContactsAdapter);
-        solicitarPermisoContactos.launch(Manifest.permission.READ_CONTACTS);
+        snackbar = Snackbar.make(findViewById(R.id.layoutcontactos),"No se ha otorgado el permiso",Snackbar.LENGTH_SHORT);
+        snackbar.setAction("Otorgar permiso",Otorgar);
+        if(shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS))
+        {
+            snackbar.show();
+        }else{
+            solicitarPermisoContactos.launch(Manifest.permission.READ_CONTACTS);
+        }
     }
 
     ActivityResultLauncher<String> solicitarPermisoContactos = registerForActivityResult(
@@ -46,8 +57,15 @@ public class Contactos extends AppCompatActivity {
                             mProjection, null, null, null);
                     mContactsAdapter.changeCursor(mCursor);
                 }else{
-                    Toast.makeText(Contactos.this, "No se otorgó el permiso.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Contactos.this, "No se otorgó el permiso para leer los contactos.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
+
+    private View.OnClickListener Otorgar = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            solicitarPermisoContactos.launch(Manifest.permission.READ_CONTACTS);
+        }
+    };
 }
