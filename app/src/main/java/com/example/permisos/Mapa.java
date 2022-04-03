@@ -4,6 +4,10 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -42,6 +46,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.TilesOverlay;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -62,6 +67,9 @@ public class Mapa extends AppCompatActivity {
     private boolean settingsOK;
     JSONArray localizaciones;
     private double radio;
+    SensorManager sensorManager;
+    Sensor lightSensor;
+    SensorEventListener lightSensorListener;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -75,6 +83,9 @@ public class Mapa extends AppCompatActivity {
         solicitarPermisoAlmacenamiento.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         settingsOK = false;
         radio = 6378.1;
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        lightSensorListener = lecturaSensor;
         localizaciones = new JSONArray();
         mLocationRequest = createLocationRequest();
         mLocationCallback = callbackUbicacion;
@@ -275,5 +286,22 @@ public class Mapa extends AppCompatActivity {
         return Math.round(result*100.0)/100.0;
     }
 
+    private SensorEventListener lecturaSensor = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent sensorEvent) {
+            if(map != null)
+            {
+                if(sensorEvent.values[0]<1800)
+                {
+                    map.getOverlayManager().getTilesOverlay().setColorFilter(TilesOverlay.INVERT_COLORS);
+                }
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+
+        }
+    };
 
 }
