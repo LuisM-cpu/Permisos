@@ -55,6 +55,7 @@ public class Mapa extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         map.onResume();
+        mFusedLocationClient.getLastLocation().addOnSuccessListener(ubicacionObtenida);
         mapController = map.getController();
         mapController.setZoom(18.0);
         mapController.setCenter(ubicacion);
