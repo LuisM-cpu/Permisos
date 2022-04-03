@@ -96,6 +96,7 @@ public class Mapa extends AppCompatActivity {
         marcador.setTitle("Ubicacion Actual");
         marcador.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
         checkLocationSettings();
+        sensorManager.registerListener(lightSensorListener,lightSensor,SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -107,6 +108,7 @@ public class Mapa extends AppCompatActivity {
         mapController.setZoom(18.0);
         mapController.setCenter(ultimaUbicacion);
         marcador.setPosition(ultimaUbicacion);
+        sensorManager.registerListener(lightSensorListener,lightSensor,SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -114,6 +116,7 @@ public class Mapa extends AppCompatActivity {
         super.onPause();
         map.onPause();
         stopLocationUpdates();
+        sensorManager.unregisterListener(lightSensorListener);
     }
 
     ActivityResultLauncher<String> solicitarPermisoUbicacion = registerForActivityResult(
