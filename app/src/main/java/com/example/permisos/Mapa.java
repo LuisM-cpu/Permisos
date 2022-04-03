@@ -3,6 +3,7 @@ package com.example.permisos;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -22,6 +23,7 @@ import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
 
 public class Mapa extends AppCompatActivity {
 
@@ -29,6 +31,7 @@ public class Mapa extends AppCompatActivity {
     private IMapController mapController;
     private GeoPoint ubicacion;
     private FusedLocationProviderClient mFusedLocationClient;
+    private Marker marcador;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -37,11 +40,15 @@ public class Mapa extends AppCompatActivity {
         Context ctx = getApplicationContext();
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_mapa);
+        ubicacion = new GeoPoint(0.0,0.0);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         solicitarPermisoAlmacenamiento.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         map = findViewById(R.id.osmMap);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
+        marcador = new Marker(map);
+        marcador.setTitle("Ubicacion Actual");
+        marcador.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
     }
 
     @Override
@@ -51,6 +58,7 @@ public class Mapa extends AppCompatActivity {
         mapController = map.getController();
         mapController.setZoom(18.0);
         mapController.setCenter(ubicacion);
+        marcador.setPosition(ubicacion);
     }
 
     @Override
@@ -84,6 +92,8 @@ public class Mapa extends AppCompatActivity {
                 mapController = map.getController();
                 mapController.setZoom(18.0);
                 mapController.setCenter(ubicacion);
+                map.getOverlays().add(marcador);
+                marcador.setPosition(ubicacion);
             }
         }
     };
