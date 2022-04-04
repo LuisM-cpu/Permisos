@@ -9,9 +9,15 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
@@ -54,10 +60,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.util.Date;
+import java.util.List;
 
 public class Mapa extends AppCompatActivity {
 
     private MapView map;
+    private EditText busqueda;
+    private String direccion;
     private IMapController mapController;
     private GeoPoint ultimaUbicacion;
     private Location nuevaUbicacion;
@@ -66,11 +75,16 @@ public class Mapa extends AppCompatActivity {
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
     private boolean settingsOK;
-    JSONArray localizaciones;
+    private JSONArray localizaciones;
     private double radio;
-    SensorManager sensorManager;
-    Sensor lightSensor;
-    SensorEventListener lightSensorListener;
+    private SensorManager sensorManager;
+    private Sensor lightSensor;
+    private SensorEventListener lightSensorListener;
+    private Geocoder mGeocoder;
+    private double lowerLeftLatitude;
+    private double lowerLeftLongitude;
+    private double upperRightLatitude;
+    private double upperRigthLongitude;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -83,8 +97,15 @@ public class Mapa extends AppCompatActivity {
         Context ctx = getApplicationContext();
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_mapa);
+        busqueda = findViewById(R.id.busqueda);
+        busqueda.setOnEditorActionListener(buscar);
         settingsOK = false;
         radio = 6378.1;
+        lowerLeftLatitude = 1.396967;
+        lowerLeftLongitude= -78.903968;
+        upperRightLatitude= 11.983639;
+        upperRigthLongitude= -71.869905;
+        mGeocoder = new Geocoder(getBaseContext());
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         lightSensorListener = lecturaSensor;
@@ -106,10 +127,6 @@ public class Mapa extends AppCompatActivity {
         super.onResume();
         map.onResume();
         startLocationUpdates();
-        mapController = map.getController();
-        mapController.setZoom(18.0);
-        mapController.setCenter(ultimaUbicacion);
-        marcador.setPosition(ultimaUbicacion);
         sensorManager.registerListener(lightSensorListener,lightSensor,SensorManager.SENSOR_DELAY_NORMAL);
     }
 
@@ -240,13 +257,13 @@ public class Mapa extends AppCompatActivity {
                         nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude()) >= 0.03)
                 {
                     writeJSONObject();
+                    ultimaUbicacion = new GeoPoint(nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude());
+                    mapController = map.getController();
+                    mapController.setZoom(18.0);
+                    mapController.setCenter(ultimaUbicacion);
+                    marcador.setPosition(ultimaUbicacion);
                 }
-                ultimaUbicacion = new GeoPoint(nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude());
-                mapController = map.getController();
-                mapController.setZoom(18.0);
-                mapController.setCenter(ultimaUbicacion);
-                map.getOverlays().add(marcador);
-                marcador.setPosition(ultimaUbicacion);
+
             }
         }
     };
@@ -307,6 +324,44 @@ public class Mapa extends AppCompatActivity {
         @Override
         public void onAccuracyChanged(Sensor sensor, int i) {
 
+        }
+    };
+
+    private TextView.OnEditorActionListener buscar = new TextView.OnEditorActionListener() {
+        @Override
+        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+            if(i == EditorInfo.IME_ACTION_SEARCH)
+            {
+                if(!busqueda.getText().toString().isEmpty())
+                {
+                    direccion = busqueda.getText().toString();
+                    try {
+                        List<Address> direcciones = mGeocoder.getFromLocationName(direccion,1,lowerLeftLatitude,lowerLeftLongitude,upperRightLatitude,upperRigthLongitude);
+                        if(direcciones != null && !direcciones.isEmpty())
+                        {
+                            Address resultado = direcciones.get(0);
+                            GeoPoint ubiEncontrada = new GeoPoint(resultado.getLatitude(),resultado.getLongitude());
+                            if(map != null){
+                                Marker marcaBusqueda = new Marker(map);
+                                marcaBusqueda.setTitle(resultado.getAddressLine(0));
+                                marcaBusqueda.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
+                                mapController.setCenter(ubiEncontrada);
+                                map.getOverlays().clear();
+                                map.getOverlays().add(marcador);
+                                map.getOverlays().add(marcaBusqueda);
+                                marcaBusqueda.setPosition(ubiEncontrada);
+                            }
+                        }else{
+                            Toast.makeText(Mapa.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();
+                        }
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }else{
+                    Toast.makeText(Mapa.this, "La dirección está vacía.", Toast.LENGTH_SHORT).show();
+                }
+            }
+            return false;
         }
     };
 
