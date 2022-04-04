@@ -49,9 +49,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.TilesOverlay;
 
@@ -115,6 +117,7 @@ public class Mapa extends AppCompatActivity {
         map = findViewById(R.id.osmMap);
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setMultiTouchControls(true);
+        map.getOverlays().add(createOverlayEvents());
         marcador = new Marker(map);
         marcador.setTitle("Ubicacion Actual");
         marcador.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
@@ -347,6 +350,7 @@ public class Mapa extends AppCompatActivity {
                                 marcaBusqueda.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
                                 mapController.setCenter(ubiEncontrada);
                                 map.getOverlays().clear();
+                                map.getOverlays().add(createOverlayEvents());
                                 map.getOverlays().add(marcador);
                                 map.getOverlays().add(marcaBusqueda);
                                 marcaBusqueda.setPosition(ubiEncontrada);
@@ -364,5 +368,20 @@ public class Mapa extends AppCompatActivity {
             return false;
         }
     };
+
+    private MapEventsOverlay createOverlayEvents(){
+        MapEventsOverlay overlayEventos = new MapEventsOverlay(new MapEventsReceiver() {
+            @Override
+            public boolean singleTapConfirmedHelper(GeoPoint p) {
+                return false;
+            }
+            @Override
+            public boolean longPressHelper(GeoPoint p) {
+                //longPressOnMap(p);
+                return true;
+            }
+        });
+        return overlayEventos;
+    }
 
 }
