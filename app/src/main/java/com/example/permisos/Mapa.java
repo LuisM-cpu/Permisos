@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ColorFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -75,12 +76,13 @@ public class Mapa extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Context ctx = getApplicationContext();
-        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
-        setContentView(R.layout.activity_mapa);
         ultimaUbicacion = new GeoPoint(0.0,0.0);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         solicitarPermisoAlmacenamiento.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        solicitarPermisoUbicacion.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+        Context ctx = getApplicationContext();
+        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
+        setContentView(R.layout.activity_mapa);
         settingsOK = false;
         radio = 6378.1;
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -156,7 +158,7 @@ public class Mapa extends AppCompatActivity {
                 @Override
                 public void onActivityResult(Boolean result) {
                     if(result){
-                        solicitarPermisoUbicacion.launch(Manifest.permission_group.LOCATION);
+                        solicitarPermisoUbicacion.launch(Manifest.permission.ACCESS_FINE_LOCATION);
                     }else{
                         if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE))
                         {
@@ -235,10 +237,9 @@ public class Mapa extends AppCompatActivity {
             if(nuevaUbicacion!=null)
             {
                 if(distance(ultimaUbicacion.getLatitude(),ultimaUbicacion.getLongitude(),
-                        nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude()) >= 30)
+                        nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude()) >= 0.03)
                 {
                     writeJSONObject();
-                    Toast.makeText(Mapa.this, "La diferencia es mayor a 30 metreos.", Toast.LENGTH_SHORT).show();
                 }
                 ultimaUbicacion = new GeoPoint(nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude());
                 mapController = map.getController();
@@ -294,9 +295,11 @@ public class Mapa extends AppCompatActivity {
         public void onSensorChanged(SensorEvent sensorEvent) {
             if(map != null)
             {
-                if(sensorEvent.values[0]<1800)
+                if(sensorEvent.values[0]<1500)
                 {
                     map.getOverlayManager().getTilesOverlay().setColorFilter(TilesOverlay.INVERT_COLORS);
+                }else{
+                    map.getOverlayManager().getTilesOverlay().setColorFilter(new ColorFilter());
                 }
             }
         }
