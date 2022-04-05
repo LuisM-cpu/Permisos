@@ -60,6 +60,7 @@ import org.osmdroid.views.overlay.TilesOverlay;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Date;
 import java.util.List;
@@ -265,6 +266,9 @@ public class Mapa extends AppCompatActivity {
                     mapController.setZoom(18.0);
                     mapController.setCenter(ultimaUbicacion);
                     marcador.setPosition(ultimaUbicacion);
+                }else{
+                    ultimaUbicacion = new GeoPoint(nuevaUbicacion.getLatitude(),nuevaUbicacion.getLongitude());
+                    marcador.setPosition(ultimaUbicacion);
                 }
 
             }
@@ -377,7 +381,20 @@ public class Mapa extends AppCompatActivity {
             }
             @Override
             public boolean longPressHelper(GeoPoint p) {
-                //longPressOnMap(p);
+                try {
+                    direccion = mGeocoder.getFromLocation(p.getLatitude(),p.getLongitude(),1).get(0).getAddressLine(0);
+                    Marker marcaToque = new Marker(map);
+                    marcaToque.setTitle(direccion);
+                    marcaToque.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
+                    mapController.setCenter(p);
+                    map.getOverlays().clear();
+                    map.getOverlays().add(createOverlayEvents());
+                    map.getOverlays().add(marcador);
+                    map.getOverlays().add(marcaToque);
+                    marcaToque.setPosition(p);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return true;
             }
         });
