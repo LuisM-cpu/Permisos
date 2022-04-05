@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -13,6 +14,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
@@ -48,6 +50,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
+import org.osmdroid.bonuspack.routing.OSRMRoadManager;
+import org.osmdroid.bonuspack.routing.Road;
+import org.osmdroid.bonuspack.routing.RoadManager;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
@@ -55,6 +60,7 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.TilesOverlay;
 
 import java.io.BufferedWriter;
@@ -62,6 +68,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -88,6 +97,8 @@ public class Mapa extends AppCompatActivity {
     private double lowerLeftLongitude;
     private double upperRightLatitude;
     private double upperRigthLongitude;
+    private RoadManager roadManager;
+    Polyline roadOverlay;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -112,6 +123,7 @@ public class Mapa extends AppCompatActivity {
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         lightSensorListener = lecturaSensor;
+        roadManager = new OSRMRoadManager(this, "ANDROID");
         localizaciones = new JSONArray();
         mLocationRequest = createLocationRequest();
         mLocationCallback = callbackUbicacion;
@@ -124,6 +136,8 @@ public class Mapa extends AppCompatActivity {
         marcador.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
         checkLocationSettings();
         sensorManager.registerListener(lightSensorListener,lightSensor,SensorManager.SENSOR_DELAY_NORMAL);
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
     }
 
     @Override
@@ -353,11 +367,13 @@ public class Mapa extends AppCompatActivity {
                                 marcaBusqueda.setTitle(resultado.getAddressLine(0));
                                 marcaBusqueda.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
                                 mapController.setCenter(ubiEncontrada);
+                                mapController.setZoom(18.0);
                                 map.getOverlays().clear();
                                 map.getOverlays().add(createOverlayEvents());
                                 map.getOverlays().add(marcador);
                                 map.getOverlays().add(marcaBusqueda);
                                 marcaBusqueda.setPosition(ubiEncontrada);
+                                drawRoute(ultimaUbicacion,ubiEncontrada);
                             }
                         }else{
                             Toast.makeText(Mapa.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();
@@ -387,11 +403,13 @@ public class Mapa extends AppCompatActivity {
                     marcaToque.setTitle(direccion);
                     marcaToque.setIcon(getResources().getDrawable(R.drawable.location,getTheme()));
                     mapController.setCenter(p);
+                    mapController.setZoom(18.0);
                     map.getOverlays().clear();
                     map.getOverlays().add(createOverlayEvents());
                     map.getOverlays().add(marcador);
                     map.getOverlays().add(marcaToque);
                     marcaToque.setPosition(p);
+                    drawRoute(ultimaUbicacion,p);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -400,5 +418,22 @@ public class Mapa extends AppCompatActivity {
         });
         return overlayEventos;
     }
+
+    private void drawRoute(GeoPoint start, GeoPoint finish){
+        ArrayList<GeoPoint> routePoints = new ArrayList<>();
+        routePoints.add(start);
+        routePoints.add(finish);
+        Road road = roadManager.getRoad(routePoints);
+        BigDecimal distancia = new BigDecimal(road.mLength);
+        distancia = distancia.setScale(2, RoundingMode.HALF_UP);
+        Toast.makeText(this, "Distancia: "+distancia+" kms.", Toast.LENGTH_SHORT).show();
+        if(map!=null){
+            roadOverlay = RoadManager.buildRoadOverlay(road);
+            roadOverlay.getOutlinePaint().setColor(Color.RED);
+            roadOverlay.getOutlinePaint().setStrokeWidth(10);
+            map.getOverlays().add(roadOverlay);
+        }
+    }
+
 
 }
