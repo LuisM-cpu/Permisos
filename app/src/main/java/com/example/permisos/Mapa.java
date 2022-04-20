@@ -47,6 +47,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -54,12 +55,21 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osmdroid.bonuspack.routing.OSRMRoadManager;
+import org.osmdroid.bonuspack.routing.Road;
+import org.osmdroid.bonuspack.routing.RoadManager;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.Polyline;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -90,6 +100,8 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
     private double upperRightLatitude;
     private double upperRigthLongitude;
     private Address resultadoBusqueda;
+    private RoadManager roadManager;
+    Polyline roadOverlay;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -111,6 +123,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         upperRightLatitude= 11.983639;
         upperRigthLongitude= -71.869905;
         mGeocoder = new Geocoder(this);
+        roadManager = new OSRMRoadManager(this, "ANDROID");
         busqueda = findViewById(R.id.busqueda);
 
         binding = ActivityMapaBinding.inflate(getLayoutInflater());
@@ -343,9 +356,10 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
                         ubiEncontrada = buscarDireccion();
                         if(ubiEncontrada!=null){
                             mMap.clear();
-                            marcaToque.position(ubiEncontrada).title(direccion);
+                            drawRoute(new GeoPoint(ubicacion.latitude,ubicacion.longitude),new GeoPoint(ubiEncontrada.latitude,ubiEncontrada.longitude));
+                            marcaBusqueda.position(ubiEncontrada).title(direccion);
                             mMap.addMarker(marcador);
-                            mMap.addMarker(marcaToque);
+                            mMap.addMarker(marcaBusqueda);
                             mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
                             mMap.moveCamera(CameraUpdateFactory.newLatLng(ubiEncontrada));
                         }
@@ -375,7 +389,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
             e.printStackTrace();
         }
         return ubicacion;
-    };
+    }
 
     private GoogleMap.OnMapLongClickListener click = new GoogleMap.OnMapLongClickListener() {
         @Override
@@ -383,6 +397,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
             try {
                 direccion = mGeocoder.getFromLocation(latLng.latitude,latLng.longitude,1).get(0).getAddressLine(0);
                 mMap.clear();
+                drawRoute(new GeoPoint(ubicacion.latitude,ubicacion.longitude),new GeoPoint(latLng.latitude,latLng.longitude));
                 marcaToque.position(latLng).title(direccion);
                 mMap.addMarker(marcador);
                 mMap.addMarker(marcaToque);
@@ -394,6 +409,32 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         }
     };
 
-    
+    private void drawRoute(GeoPoint start, GeoPoint finish){
+        ArrayList<GeoPoint> routePoints = new ArrayList<>();
+        routePoints.add(start);
+        routePoints.add(finish);
+        Road road = roadManager.getRoad(routePoints);
+        List<GeoPoint> camino = RoadManager.buildRoadOverlay(road).getActualPoints();
+        dibujarRuta(camino);
+        BigDecimal distancia = new BigDecimal(road.mLength);
+        distancia = distancia.setScale(2, RoundingMode.HALF_UP);
+        Toast.makeText(this, "Distancia: "+distancia+" kms.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void dibujarRuta(List<GeoPoint> camino){
+        com.google.android.gms.maps.model.Polyline ruta;
+        PolylineOptions puntosruta = new PolylineOptions();
+        ArrayList<LatLng> puntos = new ArrayList<LatLng>();
+        for(int i=0;i<camino.size();i++)
+        {
+            puntos.add(new LatLng(camino.get(i).getLatitude(),camino.get(i).getLongitude()));
+        }
+        for(int j=0;j<puntos.size();j++)
+        {
+            puntosruta.add(puntos.get(j));
+        }
+        ruta = mMap.addPolyline(puntosruta);
+        ruta.setColor(0xffff0000);
+    }
 
 }
