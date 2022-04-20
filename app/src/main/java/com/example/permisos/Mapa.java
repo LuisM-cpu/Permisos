@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class Mapa extends FragmentActivity implements OnMapReadyCallback {
 
@@ -88,6 +89,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
     private double lowerLeftLongitude;
     private double upperRightLatitude;
     private double upperRigthLongitude;
+    private Address resultadoBusqueda;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -108,9 +110,8 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         lowerLeftLongitude= -78.903968;
         upperRightLatitude= 11.983639;
         upperRigthLongitude= -71.869905;
-        mGeocoder = new Geocoder(getBaseContext());
+        mGeocoder = new Geocoder(this);
         busqueda = findViewById(R.id.busqueda);
-        //busqueda.setOnEditorActionListener(buscar);
 
         binding = ActivityMapaBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -130,7 +131,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         sensorManager.registerListener(lightSensorListener,lightSensor,SensorManager.SENSOR_DELAY_NORMAL);
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
-        //mMap.setOnMapLongClickListener(click);
+        //crearListenerBuscador();
     }
 
     @Override
@@ -142,6 +143,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         mMap.addMarker(marcador);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(ubicacion));
+        mMap.setOnMapLongClickListener(click);
     }
 
 
@@ -328,40 +330,51 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
         }
     };
 
-    private TextView.OnEditorActionListener buscar = new TextView.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-            if(i == EditorInfo.IME_ACTION_SEARCH)
-            {
-                if(!busqueda.getText().toString().isEmpty())
+    private void crearListenerBuscador(){
+        busqueda.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+                LatLng ubiEncontrada = new LatLng(0,0);
+                if(i == EditorInfo.IME_ACTION_SEARCH)
                 {
-                    direccion = busqueda.getText().toString();
-                    try {
-                        List<Address> direcciones = mGeocoder.getFromLocationName(direccion,1,lowerLeftLatitude,lowerLeftLongitude,upperRightLatitude,upperRigthLongitude);
-                        if(direcciones != null && !direcciones.isEmpty())
-                        {
-                            Address resultado = direcciones.get(0);
-                            LatLng ubiEncontrada = new LatLng(resultado.getLatitude(),resultado.getLongitude());
-                            if(mMap != null){
-                                mMap.clear();
-                                marcaBusqueda.position(ubiEncontrada).title(resultado.getAddressLine(0));
-                                mMap.addMarker(marcador);
-                                mMap.addMarker(marcaBusqueda);
-                                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(ubiEncontrada));
-                            }
-                        }else{
-                            Toast.makeText(Mapa.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();
+                    if(!busqueda.getText().toString().isEmpty())
+                    {
+                        direccion = busqueda.getText().toString();
+                        ubiEncontrada = buscarDireccion();
+                        if(ubiEncontrada!=null){
+                            mMap.clear();
+                            marcaToque.position(ubiEncontrada).title(direccion);
+                            mMap.addMarker(marcador);
+                            mMap.addMarker(marcaToque);
+                            mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                            mMap.moveCamera(CameraUpdateFactory.newLatLng(ubiEncontrada));
                         }
-                    }catch (Exception e){
-                        e.printStackTrace();
+                    }else{
+                        Toast.makeText(Mapa.this, "La dirección está vacía.", Toast.LENGTH_SHORT).show();
                     }
-                }else{
-                    Toast.makeText(Mapa.this, "La dirección está vacía.", Toast.LENGTH_SHORT).show();
                 }
+                return false;
             }
-            return false;
+        });
+    }
+
+    private LatLng buscarDireccion(){
+        LatLng ubicacion = new LatLng(0,0);
+        try {
+            List<Address> direcciones = mGeocoder.getFromLocationName(direccion,1,lowerLeftLatitude,lowerLeftLongitude,upperRightLatitude,upperRigthLongitude);
+            if(direcciones != null && !direcciones.isEmpty())
+            {
+                resultadoBusqueda = direcciones.get(0);
+                ubicacion = new LatLng(resultadoBusqueda.getLatitude(),resultadoBusqueda.getLongitude());
+                return ubicacion;
+            }else{
+                Toast.makeText(Mapa.this, "Dirección no encontrada.", Toast.LENGTH_SHORT).show();
+                return null;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
+        return ubicacion;
     };
 
     private GoogleMap.OnMapLongClickListener click = new GoogleMap.OnMapLongClickListener() {
@@ -380,5 +393,7 @@ public class Mapa extends FragmentActivity implements OnMapReadyCallback {
             }
         }
     };
+
+    
 
 }
